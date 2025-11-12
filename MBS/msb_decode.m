@@ -1,7 +1,4 @@
 function message = msb_decode(stegoImg)
-% MSB_DECODE Extrae mensaje oculto del MSB de 'stegoImg'.
-
-    % Leer imagen
     if ischar(stegoImg) || isstring(stegoImg)
         stego = imread(stegoImg);
     else

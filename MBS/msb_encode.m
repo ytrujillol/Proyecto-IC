@@ -1,7 +1,4 @@
 function stego = msb_encode(coverImg, message)
-% MSB_ENCODE Inserta 'message' en el bit más significativo (MSB) de coverImg.
-%   stego = msb_encode(coverImg, message)
-
     % Leer imagen
     if ischar(coverImg) || isstring(coverImg)
         cover = imread(coverImg);

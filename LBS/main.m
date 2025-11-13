@@ -1,23 +1,89 @@
-cover1 = imread('/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/Ajedrez.png');
-%cover1 = imread('/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/Subexpuesta.jpg');
-%cover = rgb2gray(cover1);
-cover = cover1;
+% Cargar imagen portadora (usa PNG para no perder datos)
+%cover = imread('/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/Ajedrez.png');
+cover1 = imread('/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/Subexpuesta.jpg');
+cover = rgb2gray(cover1);
+
 % Mensaje a ocultar
-msg = 'On the other hand, we denounce with righteous indignation and dislike men who are so beguiled and demoralized by the charms of pleasure of the moment, so blinded by desire, that they cannot foresee the pain and trouble that are bound to ensue; and equal blame belongs to those who fail in their duty through weakness of will, which is the same as saying through shrinking from toil and pain. These cases are perfectly simple and easy to distinguish. In a free hour, when our power of choice is untrammelled and when nothing prevents our being able to do what we like best, every pleasure is to be welcomed and every pain avoided. But in certain circumstances and owing to the claims of duty or the obligations of business it will frequently occur that pleasures have to be repudiated and annoyances accepted. The wise man therefore always holds in these matters to this principle of selection: he rejects pleasures to secure other greater pleasures, or else he endures pains to avoid worse painsOn the other hand, we denounce with righteous indignation and dislike men who are so beguiled and demoralized by the charms of pleasure of the moment, so blinded by desire, that they cannot foresee the pain and trouble that are bound to ensue; and equal blame belongs to those who fail in their duty through weakness of will, which is the same as saying through shrinking from toil and pain. These cases are perfectly simple and easy to distinguish. In a free hour, when our power of choice is untrammelled and when nothing prevents our being able to do what we like best, every pleasure is to be welcomed and every pain avoided. But in certain circumstances and owing to the claims of duty or the obligations of business it will frequently occur that pleasures have to be repudiated and annoyances accepted. The wise man therefore always holds in these matters to this principle of selection: he rejects pleasures to secure other greater pleasures, or else he endures pains to avoid worse painsOn the other hand, we denounce with righteous indignation and dislike men who are so beguiled and demoralized by the charms of pleasure of the moment, so blinded by desire, that they cannot foresee the pain and trouble that are bound to ensue; and equal blame belongs to those who fail in their duty through weakness of will, which is the same as saying through shrinking from toil and pain. These cases are perfectly simple and easy to distinguish. In a free hour, when our power of choice is untrammelled and when nothing prevents our being able to do what we like best, every pleasure is to be welcomed and every pain avoided. But in certain circumstances and owing to the claims of duty or the obligations of business it will frequently occur that pleasures have to be repudiated and annoyances accepted. The wise man therefore always holds in these matters to this principle of selection: he rejects pleasures to secure other greater pleasures, or else he endures pains to avoid worse painsOn the other hand, we denounce with righteous indignation and dislike men who are so beguiled and demoralized by the charms of pleasure of the moment, so blinded by desire, that they cannot foresee the pain and trouble that are bound to ensue; and equal blame belongs to those who fail in their duty through weakness of will, which is the same as saying through shrinking from toil and pain. These cases are perfectly simple and easy to distinguish. In a free hour, when our power of choice is untrammelled and when nothing prevents our being able to do what we like best, every pleasure is to be welcomed and every pain avoided. But in certain circumstances and owing to the claims of duty or the obligations of business it will frequently occur that pleasures have to be repudiated and annoyances accepted. The wise man therefore always holds in these matters to this principle of selection: he rejects pleasures to secure other greater pleasures, or else he endures pains to avoid worse painsOn the other hand, we denounce with righteous indignation and dislike men who are so beguiled and demoralized by the charms of pleasure of the moment, so blinded by desire, that they cannot foresee the pain and trouble that are bound to ensue; and equal blame belongs to those who fail in their duty through weakness of will, which is the same as saying through shrinking from toil and pain. These cases are perfectly simple and easy to distinguish. In a free hour, when our power of choice is untrammelled and when nothing prevents our being able to do what we like best, every pleasure is to be welcomed and every pain avoided. But in certain circumstances and owing to the claims of duty or the obligations of business it will frequently occur that pleasures have to be repudiated and annoyances accepted. The wise man therefore always holds in these matters to this principle of selection: he rejects pleasures to secure other greater pleasures, or else he endures pains to avoid worse pains';
+msg = 'On the other hand, we denounce with righteous indignation ... (texto largo) ...';
 
-% Codificar
-stego = lsb_encode(cover, msg);
+% Lista de métodos a probar
+methods = { ...
+    "cesar/cesar_enc",       "cesar/cesar_dec"; ...
+    "vigenere/vig_enc",      "vigenere/vig_dec"; ...
+    "sustitucion/sust_enc",  "sustitucion/sust_dec"; ...
+    "elgamal/elgamal_enc",   "elgamal/elgamal_dec" ...
+};
 
-imwrite(stego, 'stego.png', 'png');
+% Claves para cada método (ajusta si lo necesitas)
+keys = { 3, 'KEY', [], 5 };
 
-% Decodificar
-recuperado = lsb_decode('stego.png');
-disp(recuperado);
+fprintf('\n===== PRUEBA LSB + CIFRADO PARA 4 MÉTODOS =====\n');
 
-orig  = cover;
-stego = imread('stego.png');
+for i = 1:size(methods,1)
 
-% Error de Frobenius absoluto y relativo
-[E_F, E_rel] = frobenius_error(orig, stego);
-fprintf('||A-B||_F = %.4f\n', E_F);
-fprintf('Error relativo = %.6f\n', E_rel);
+    enc_path = methods{i,1};
+    dec_path = methods{i,2};
+    key = keys{i};
+
+    fprintf('\n--------------------------------------\n');
+    fprintf('Método: %s\n', enc_path);
+    fprintf('--------------------------------------\n');
+
+    % ---- Cifrado ----
+    try
+        if isempty(key)
+            enc_msg = feval(str2func(enc_path), msg);
+        else
+            enc_msg = feval(str2func(enc_path), msg, key);
+        end
+    catch e
+        warning(['Error en cifrado: ' e.message]);
+        continue;
+    end
+
+    % ---- LSB esteganografía ----
+    try
+        stego = lsb_encode(cover, enc_msg);
+        imwrite(stego, ['stego_lsb_' num2str(i) '.png'], 'png');
+    catch e
+        warning(['lsb_encode error: ' e.message]);
+        continue;
+    end
+
+    % ---- Decodificación LSB ----
+    try
+        recuperado = lsb_decode(['stego_lsb_' num2str(i) '.png']);
+    catch e
+        warning(['lsb_decode error: ' e.message]);
+        continue;
+    end
+
+    % ---- Descifrado ----
+    try
+        if isempty(key)
+            dec_msg = feval(str2func(dec_path), recuperado);
+        else
+            dec_msg = feval(str2func(dec_path), recuperado, key);
+        end
+    catch e
+        warning(['Error en descifrado: ' e.message]);
+        continue;
+    end
+
+    % ---- Verificación del mensaje ----
+    fprintf('Mensaje recuperado OK: %d\n', strcmp(msg, dec_msg));
+
+    % ---- Cálculo del error de Frobenius ----
+    try
+        orig = cover;
+        stego_loaded = imread(['stego_lsb_' num2str(i) '.png']);
+        [E_F, E_rel] = frobenius_error(orig, stego_loaded);
+        fprintf('||A-B||_F = %.4f\n', E_F);
+        fprintf('Error relativo = %.6f\n', E_rel);
+    catch fe
+        warning(['frobenius_error: ' fe.message]);
+    end
+
+end
+
+fprintf('\n===== FIN DE PRUEBAS LSB =====\n');

@@ -1,89 +1,93 @@
-% Cargar imagen portadora (usa PNG para no perder datos)
-%cover = imread('/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/Ajedrez.png');
-cover1 = imread('/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/Subexpuesta.jpg');
-cover = rgb2gray(cover1);
+cover_path = '/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/Ajedrez.png';
+outdir = fullfile(pwd, 'out');
+if ~exist(outdir, 'dir'), mkdir(outdir); end
 
-% Mensaje a ocultar
-msg = 'On the other hand, we denounce with righteous indignation ... (texto largo) ...';
+cover = imread(cover_path);
 
-% Lista de métodos a probar
-methods = { ...
-    "cesar/cesar_enc",       "cesar/cesar_dec"; ...
-    "vigenere/vig_enc",      "vigenere/vig_dec"; ...
-    "sustitucion/sust_enc",  "sustitucion/sust_dec"; ...
-    "elgamal/elgamal_enc",   "elgamal/elgamal_dec" ...
-};
+%% Mensaje común para todas las pruebas
+MSG = 'LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA';
 
-% Claves para cada método (ajusta si lo necesitas)
-keys = { 3, 'KEY', [], 5 };
+%% Caso A: LSB sin cifrado
+msg_A = MSG;
 
-fprintf('\n===== PRUEBA LSB + CIFRADO PARA 4 MÉTODOS =====\n');
+stego_A = lsb_encode(cover, msg_A);
+file_A  = fullfile(outdir, 'stego_lsb_sin_cifrado.png');
+imwrite(stego_A, file_A, 'png');
 
-for i = 1:size(methods,1)
+rec_A = lsb_decode(file_A);
+fprintf('Recuperado (sin cifrado): %s\n', rec_A);
 
-    enc_path = methods{i,1};
-    dec_path = methods{i,2};
-    key = keys{i};
+[E_F_A, E_rel_A] = frobenius_error(cover, stego_A);
 
-    fprintf('\n--------------------------------------\n');
-    fprintf('Método: %s\n', enc_path);
-    fprintf('--------------------------------------\n');
+%% Caso B: LSB + César
+k = 3;                                
+msg_B_plain = MSG;                    
+msg_B_cif   = cesar_enc(msg_B_plain, k);   
 
-    % ---- Cifrado ----
-    try
-        if isempty(key)
-            enc_msg = feval(str2func(enc_path), msg);
-        else
-            enc_msg = feval(str2func(enc_path), msg, key);
-        end
-    catch e
-        warning(['Error en cifrado: ' e.message]);
-        continue;
-    end
+stego_B = lsb_encode(cover, msg_B_cif);    
+file_B  = fullfile(outdir, sprintf('stego_lsb_cesar_k%d.png', k));
+imwrite(stego_B, file_B, 'png');
 
-    % ---- LSB esteganografía ----
-    try
-        stego = lsb_encode(cover, enc_msg);
-        imwrite(stego, ['stego_lsb_' num2str(i) '.png'], 'png');
-    catch e
-        warning(['lsb_encode error: ' e.message]);
-        continue;
-    end
+rec_B_cif = lsb_decode(file_B);            
+rec_B     = cesar_dec(rec_B_cif, k);       
+fprintf('Recuperado (César k=%d): %s\n', k, rec_B);
 
-    % ---- Decodificación LSB ----
-    try
-        recuperado = lsb_decode(['stego_lsb_' num2str(i) '.png']);
-    catch e
-        warning(['lsb_decode error: ' e.message]);
-        continue;
-    end
+[E_F_B, E_rel_B] = frobenius_error(cover, stego_B);
 
-    % ---- Descifrado ----
-    try
-        if isempty(key)
-            dec_msg = feval(str2func(dec_path), recuperado);
-        else
-            dec_msg = feval(str2func(dec_path), recuperado, key);
-        end
-    catch e
-        warning(['Error en descifrado: ' e.message]);
-        continue;
-    end
+%% Caso C: LSB + ElGamal (mod 257)
+p = 257;                          
+K = 123;                          
+msg_C_plain = MSG;                
 
-    % ---- Verificación del mensaje ----
-    fprintf('Mensaje recuperado OK: %d\n', strcmp(msg, dec_msg));
+cbytes_C = elgamal_enc(msg_C_plain, K, p);           
+stego_C  = lsb_encode(cover, cbytes_C);              
+file_C   = fullfile(outdir, sprintf('stego_lsb_elgamal_p%d_K%d.png', p, K));
+imwrite(stego_C, file_C, 'png');
 
-    % ---- Cálculo del error de Frobenius ----
-    try
-        orig = cover;
-        stego_loaded = imread(['stego_lsb_' num2str(i) '.png']);
-        [E_F, E_rel] = frobenius_error(orig, stego_loaded);
-        fprintf('||A-B||_F = %.4f\n', E_F);
-        fprintf('Error relativo = %.6f\n', E_rel);
-    catch fe
-        warning(['frobenius_error: ' fe.message]);
-    end
+rec_C_cif = uint8(lsb_decode(file_C));               
+rec_C     = elgamal_dec(rec_C_cif, K, p, true);       
+fprintf('Recuperado (ElGamal p=%d, K=%d): %s\n', p, K, rec_C);
 
-end
+[E_F_C, E_rel_C] = frobenius_error(cover, stego_C);  
 
-fprintf('\n===== FIN DE PRUEBAS LSB =====\n');
+%% Caso D: LSB + Sustitución monoalfabética
+msg_D_plain = MSG;                         
+msg_D_cif   = sust_enc(msg_D_plain);       
+
+stego_D = lsb_encode(cover, msg_D_cif);    
+file_D  = fullfile(outdir, 'stego_lsb_sustitucion.png');
+imwrite(stego_D, file_D, 'png');
+
+rec_D_cif = lsb_decode(file_D);            
+rec_D     = sust_dec(rec_D_cif);           
+fprintf('Recuperado (Sustitución): %s\n', rec_D);
+
+[E_F_D, E_rel_D] = frobenius_error(cover, stego_D);  
+
+%% Caso E: LSB + Vigenère
+keyV = 'CLAVE';                             
+msg_E_plain = MSG;                         
+msg_E_cif   = vig_enc(msg_E_plain, keyV);  
+
+stego_E = lsb_encode(cover, msg_E_cif);    
+file_E  = fullfile(outdir, sprintf('stego_lsb_vigenere_key_%s.png', keyV));
+imwrite(stego_E, file_E, 'png');
+
+rec_E_cif = lsb_decode(file_E);            
+rec_E     = vig_dec(rec_E_cif, keyV);      
+fprintf('Recuperado (Vigenère key=%s): %s\n', keyV, rec_E);
+
+[E_F_E, E_rel_E] = frobenius_error(cover, stego_E);  
+
+%% Tabla de errores (Frobenius absoluto y relativo)
+Metodo = [ ...
+    "LSB sin cifrado"; ...
+    sprintf("LSB + César (k=%d)", k); ...
+    sprintf("LSB + ElGamal (p=%d, K=%d)", p, K); ...
+    "LSB + Sustitución (monoalfabética)"; ...
+    sprintf("LSB + Vigenère (key=%s)", keyV) ...
+];
+Error_F   = [E_F_A; E_F_B; E_F_C; E_F_D; E_F_E];
+Error_rel = [E_rel_A; E_rel_B; E_rel_C; E_rel_D; E_rel_E];
+
+T = table(Metodo, Error_F, Error_rel)

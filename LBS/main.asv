@@ -1,0 +1,113 @@
+% % Cargar imagen portadora (usa PNG para no perder datos)
+% %cover = imread('/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/Ajedrez.png');
+% cover1 = imread('/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/Subexpuesta.jpg');
+% cover = rgb2gray(cover1);
+% 
+% % Mensaje a ocultar
+% msg = 'On the other hand, we denounce with righteous indignation ... (texto largo) ...';
+% 
+% % Lista de métodos a probar
+% methods = { ...
+%     "cesar/cesar_enc",       "cesar/cesar_dec"; ...
+%     "vigenere/vig_enc",      "vigenere/vig_dec"; ...
+%     "sustitucion/sust_enc",  "sustitucion/sust_dec"; ...
+%     "elgamal/elgamal_enc",   "elgamal/elgamal_dec" ...
+% };
+% 
+% % Claves para cada método (ajusta si lo necesitas)
+% keys = { 3, 'KEY', [], 5 };
+% 
+% fprintf('\n===== PRUEBA LSB + CIFRADO PARA 4 MÉTODOS =====\n');
+% 
+% for i = 1:size(methods,1)
+% 
+%     enc_path = methods{i,1};
+%     dec_path = methods{i,2};
+%     key = keys{i};
+% 
+%     fprintf('\n--------------------------------------\n');
+%     fprintf('Método: %s\n', enc_path);
+%     fprintf('--------------------------------------\n');
+% 
+%     % ---- Cifrado ----
+%     try
+%         if isempty(key)
+%             enc_msg = feval(str2func(enc_path), msg);
+%         else
+%             enc_msg = feval(str2func(enc_path), msg, key);
+%         end
+%     catch e
+%         warning(['Error en cifrado: ' e.message]);
+%         continue;
+%     end
+% 
+%     % ---- LSB esteganografía ----
+%     try
+%         stego = lsb_encode(cover, enc_msg);
+%         imwrite(stego, ['stego_lsb_' num2str(i) '.png'], 'png');
+%     catch e
+%         warning(['lsb_encode error: ' e.message]);
+%         continue;
+%     end
+% 
+%     % ---- Decodificación LSB ----
+%     try
+%         recuperado = lsb_decode(['stego_lsb_' num2str(i) '.png']);
+%     catch e
+%         warning(['lsb_decode error: ' e.message]);
+%         continue;
+%     end
+% 
+%     % ---- Descifrado ----
+%     try
+%         if isempty(key)
+%             dec_msg = feval(str2func(dec_path), recuperado);
+%         else
+%             dec_msg = feval(str2func(dec_path), recuperado, key);
+%         end
+%     catch e
+%         warning(['Error en descifrado: ' e.message]);
+%         continue;
+%     end
+% 
+%     % ---- Verificación del mensaje ----
+%     fprintf('Mensaje recuperado OK: %d\n', strcmp(msg, dec_msg));
+% 
+%     % ---- Cálculo del error de Frobenius ----
+%     try
+%         orig = cover;
+%         stego_loaded = imread(['stego_lsb_' num2str(i) '.png']);
+%         [E_F, E_rel] = frobenius_error(orig, stego_loaded);
+%         fprintf('||A-B||_F = %.4f\n', E_F);
+%         fprintf('Error relativo = %.6f\n', E_rel);
+%     catch fe
+%         warning(['frobenius_error: ' fe.message]);
+%     end
+% 
+% end
+% 
+% fprintf('\n===== FIN DE PRUEBAS LSB =====\n');
+
+
+cover1 = imread('/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/Ajedrez.png');
+cover = cover1;
+
+Mensaje a ocultar
+msg = 'hola'; 
+
+Codificar
+stego = lsb_encode(cover, msg);
+
+imwrite(stego, 'stego.png', 'png');
+
+Decodificar
+recuperado = lsb_decode('stego.png');
+disp(recuperado);
+
+orig  = cover;
+stego = imread('stego.png');
+
+Error de Frobenius absoluto y relativo
+[E_F, E_rel] = frobenius_error(orig, stego);
+fprintf('||A-B||_F = %.4f\n', E_F);
+fprintf('Error relativo = %.6f\n', E_rel);

@@ -1,5 +1,5 @@
-cover_path = '/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/Ajedrez.png';
-outdir = fullfile(pwd, 'out');
+cover_path = '/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/guiza.png';
+outdir = fullfile(pwd, 'out1');
 if ~exist(outdir, 'dir'), mkdir(outdir); end
 
 cover = imread(cover_path);

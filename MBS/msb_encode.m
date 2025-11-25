@@ -12,12 +12,12 @@ function stego = msb_encode(coverImg, message)
 
     % Convertir mensaje a bytes y bits
     msgBytes = uint8(message);
-    msgLen   = uint32(numel(msgBytes));  % longitud en bytes (32 bits)
+    msgLen   = uint32(numel(msgBytes));
 
-    lenBytes = typecast(msgLen, 'uint8');
-    bitsLen  = bytes2bits(lenBytes);
-    bitsMsg  = bytes2bits(msgBytes);
-    bitstream = [bitsLen; bitsMsg];      % concatenamos cabecera + datos
+    lenBytes  = typecast(msgLen, 'uint8');
+    bitsLen   = bytes2bits(lenBytes);
+    bitsMsg   = bytes2bits(msgBytes);
+    bitstream = [bitsLen; bitsMsg];
 
     % Aplanar imagen
     pixels = cover(:);
@@ -25,16 +25,32 @@ function stego = msb_encode(coverImg, message)
     nbits = numel(bitstream);
 
     if nbits > capacity
-        error('Capacidad insuficiente: %d bits requeridos, %d disponibles.', nbits, capacity);
+        error('Capacidad insuficiente: %d bits requeridos, %d disponibles.', ...
+              nbits, capacity);
     end
 
-    % Escribir en el bit más significativo
-    pixels(1:nbits) = bitset(pixels(1:nbits), 8, bitstream);
+    % ---------------------------------------------------------
+    %  Distribuir bits uniformemente en toda la imagen
+    % ---------------------------------------------------------
+    positions = round(linspace(1, capacity, nbits));
+    positions = unique(positions);
 
-    % Reconstruir imagen
+    % Añadir los índices que falten al final
+    if numel(positions) < nbits 
+        missing = nbits - numel(positions);
+        positions = [positions, (positions(end)+1) : (positions(end)+missing)];
+    end
+
+    % ---------------------------------------------------------
+    % Escribir en el MSB (bit 8)
+    % ---------------------------------------------------------
+    pixels(positions) = bitset(pixels(positions), 8, bitstream);
+
+    % Reconstruir imagen final
     stego = reshape(pixels, size(cover));
 end
 
+% Convierte vector uint8 → columna de bits (LSB primero por byte)
 function bits = bytes2bits(u8)
     n = numel(u8);
     bits = zeros(n*8,1,'uint8');
@@ -42,7 +58,7 @@ function bits = bytes2bits(u8)
     for k = 1:n
         b = u8(k);
         for bit = 0:7
-            bits(idx) = bitget(b, bit+1); % LSB→MSB
+            bits(idx) = bitget(b, bit+1);
             idx = idx + 1;
         end
     end

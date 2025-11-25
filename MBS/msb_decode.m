@@ -1,4 +1,5 @@
 function message = msb_decode(stegoImg)
+    % Leer imagen
     if ischar(stegoImg) || isstring(stegoImg)
         stego = imread(stegoImg);
     else
@@ -10,25 +11,41 @@ function message = msb_decode(stegoImg)
     end
 
     pixels = stego(:);
+    capacity = numel(pixels);
 
-    % Leer longitud (primeros 32 bits)
-    lenBits = uint8(bitget(pixels(1:32), 8));
+    % ---------------------------------------------------------
+    % Paso 1: Recuperar longitud usando posiciones uniformes
+    % ---------------------------------------------------------
+    nLenBits = 32;
+
+    posLen = round(linspace(1, capacity, nLenBits));
+
+    lenBits = uint8(bitget(pixels(posLen), 8));
     lenBytes = bits2bytes(lenBits);
-    msgLen = typecast(uint8(lenBytes), 'uint32');
+    msgLen = typecast(uint8(lenBytes), 'uint32');  % longitud en bytes
 
-    % Leer mensaje
-    totalMsgBits = double(msgLen)*8;
-    startIdx = 33;
-    endIdx = 32 + totalMsgBits;
+    % ---------------------------------------------------------
+    % Paso 2: Recuperar bits del mensaje usando el mismo patrón
+    % ---------------------------------------------------------
+    totalMsgBits = double(msgLen) * 8;
 
-    if endIdx > numel(pixels)
-        error('La imagen no contiene suficientes bits.');
-    end
+    totalBits = nLenBits + totalMsgBits;
 
-    msgBits = uint8(bitget(pixels(startIdx:endIdx), 8));
-    msgU8   = uint8(bits2bytes(msgBits));
+    % generar posiciones uniformes para toda la secuencia
+    allPositions = round(linspace(1, capacity, totalBits));
+
+    % posiciones correspondientes a los bits del mensaje
+    posMsg = allPositions(nLenBits+1 : end);
+
+    % extraer bits del MSB
+    msgBits = uint8(bitget(pixels(posMsg), 8));
+
+    msgU8 = uint8(bits2bytes(msgBits));
+
+    % Convertir a texto
     message = char(msgU8(:)).';
 end
+
 
 function u8 = bits2bytes(bits)
     nbits = numel(bits);

@@ -1,4 +1,4 @@
-cover_path = '/Users/marcos/Desktop/HelloWorld/U/Proyecto-IC/ImgTest/guiza.png';
+cover_path = '/home/yessica-trujillo/Documentos/Proyecto_IC/Proyecto-IC---Framework-para-cifrado-y-ocultamiento-en-imagenes/ImgTest/guiza.png';
 %/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/guiza.png
 outdir = fullfile(pwd, 'results_guiza');
 if ~exist(outdir, 'dir'), mkdir(outdir); end
@@ -114,7 +114,7 @@ Metodo = [ ...
     sprintf("LSB + Vigenere (key=%s)", keyV); ...
     "LSB + RSA" ...
 ];
-Error_F   = [E_F_A; E_F_B; E_F_C; E_F_D; E_F_E; E_F_F];
-Error_rel = [E_rel_A; E_rel_B; E_rel_C; E_rel_D; E_rel_E; E_rel_F];
+Error_F   = [E_F_A; E_F_B; E_F_C; E_F_D; E_F_E];
+Error_rel = [E_rel_A; E_rel_B; E_rel_C; E_rel_D; E_rel_E];
 
-T = table(Metodo, Error_F, Error_rel)
+T = table(Metodo, Error_F, Error_rel);

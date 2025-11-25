@@ -86,22 +86,24 @@ d = 2753;
 n = 3233;
 
 msg_F_plain = MSG;
+
 msg_F_cif   = RSA_enc(msg_F_plain, e, n);
 
-% Convertir a string para poder insertar en LSB
-msg_F_bytes = uint8(msg_F_cif);
+msg_F_bytes = typecast(uint16(msg_F_cif), 'uint8');
 
 stego_F = lsb_encode(cover, msg_F_bytes);
-file_F  = fullfile(outdir, 'stego_lsb_rsa.png');
+file_F  = fullfile(outdir, 'stego_msb_rsa.png');
 imwrite(stego_F, file_F, 'png');
 
-rec_F_cif = lsb_decode(file_F);
-rec_F_int = uint64(rec_F_cif);
+rec_F_bytes = lsb_decode(file_F);
 
-rec_F     = RSA_dec(rec_F_int, d, n);
-fprintf('Recuperado (RSA): %s\n', rec_F);
+rec_F_u16 = typecast(uint8(rec_F_bytes), 'uint16');
 
-[E_F_F, E_rel_F] = frobenius_error(cover, stego_F);
+rec_F_int = uint64(rec_F_u16);
+
+rec_F = RSA_dec(rec_F_int, d, n);
+
+fprintf('Recuperado (MSB + RSA): %s\n', rec_F);
 
 %% Tabla de errores (Frobenius absoluto y relativo)
 Metodo = [ ...

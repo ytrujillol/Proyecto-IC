@@ -1,5 +1,6 @@
 function stego = msb_encode(coverImg, message)
-    % MSB sequential encoder (bit 8) with simple format: [32-bit length][data bits]
+
+    % --- load image ---
     if ischar(coverImg) || isstring(coverImg)
         cover = imread(coverImg);
     else
@@ -7,38 +8,71 @@ function stego = msb_encode(coverImg, message)
     end
 
     if ~isa(cover, 'uint8')
-        error('La imagen debe ser uint8 (8 bits por canal).');
+        error('Cover image must be uint8.');
     end
 
-    % flatten
     pixels = cover(:);
-
-    % message -> bytes -> bits
-    msgBytes = uint8(message);
-    msgLen = uint32(numel(msgBytes));            % length in bytes
-
-    lenBytes = typecast(msgLen, 'uint8');       % 4 bytes (little-endian)
-    bitsLen  = bytes2bits(lenBytes);            % 32 bits
-    bitsMsg  = bytes2bits(msgBytes);            % 8*msgLen bits
-
-    bitstream = [bitsLen; bitsMsg];
-    nbits = numel(bitstream);
     capacity = numel(pixels);
 
-    if nbits > capacity
-        error('Capacidad insuficiente: %d bits requeridos, %d disponibles.', nbits, capacity);
+    % --- message to bits ---
+    msgBytes = uint8(message);
+    msgLen   = uint32(numel(msgBytes));
+
+    lenBytes = typecast(msgLen, 'uint8');        % 4 bytes
+    bitsLen  = bytes2bits(lenBytes);             % 32 bits
+    bitsMsg  = bytes2bits(msgBytes);             % msgLen*8 bits
+
+    % --- RNG SEED (4 bytes) ---
+    rngSeed  = uint32(randi([0 2^32-1]));
+    seedBytes = typecast(rngSeed, 'uint8');
+    bitsSeed  = bytes2bits(seedBytes);           % 32 bits
+
+    % --- Total needed bits ---
+    msgBitsCount = numel(bitsMsg);
+    headerBits = 32 + 32; % seed + length
+    totalBits = headerBits + msgBitsCount;
+
+    if totalBits > capacity
+        error("Not enough capacity: need %d bits, have %d", totalBits, capacity);
     end
 
-    % --- sequential embedding (positions 1:nbits) ---
-    positions = 1:nbits;
-    pixels(positions) = bitset(pixels(positions), 8, bitstream);
+    % ===============================
+    % 1) FIXED POSITIONS FOR HEADER
+    % ===============================
+    seedPos = 1:32;
+    lenPos  = 33:64;
 
+    % embed seed
+    for i = 1:32
+        pixels(seedPos(i)) = bitset(pixels(seedPos(i)), 8, bitsSeed(i));
+    end
+
+    % embed length
+    for i = 1:32
+        pixels(lenPos(i)) = bitset(pixels(lenPos(i)), 8, bitsLen(i));
+    end
+
+    % ===============================
+    % 2) DISTRIBUTE MSG BITS RANDOMLY
+    % ===============================
+    rng(double(rngSeed)); % fixed seed generates reproducible randomization
+
+    % available positions excluding the 64 header bits
+    available = 65:capacity;
+
+    % choose unique scattered positions
+    msgPos = available(randperm(numel(available), msgBitsCount));
+
+    for i = 1:msgBitsCount
+        pixels(msgPos(i)) = bitset(pixels(msgPos(i)), 8, bitsMsg(i));
+    end
+
+    % output
     stego = reshape(pixels, size(cover));
+
 end
 
-
 function bits = bytes2bits(u8)
-    % LSB-first inside each byte (same convention as user's original)
     n = numel(u8);
     bits = zeros(n*8,1,'uint8');
     idx = 1;

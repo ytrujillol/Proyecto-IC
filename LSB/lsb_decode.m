@@ -1,37 +1,59 @@
 function message = lsb_decode(stegoImg)
-    % Leer imagen
+
+    % --- Load image ---
     if ischar(stegoImg) || isstring(stegoImg)
         stego = imread(stegoImg);
     else
         stego = stegoImg;
     end
 
+    stego = uint8(stego);
     pixels = stego(:);
+    capacity = numel(pixels);
 
-    % ------------------ Longitud (32 bits) -------------------
-    lenBits = uint8(bitget(pixels(1:32), 1));
+    % ===============================
+    % 1) READ SEED FROM FIXED LSB POS
+    % ===============================
+    seedPos = 1:32;
+    seedBits = uint8(bitget(pixels(seedPos), 1));
+    seedBytes = bits2bytes(seedBits);
+    rngSeed = typecast(uint8(seedBytes), 'uint32');
+
+    % ===============================
+    % 2) READ LENGTH FROM FIXED LSB POS
+    % ===============================
+    lenPos = 33:64;
+    lenBits = uint8(bitget(pixels(lenPos), 1));
     lenBytes = bits2bytes(lenBits);
-    msgLen = typecast(uint8(lenBytes),'uint32');
+    msgLen = double(typecast(uint8(lenBytes), 'uint32'));
 
-    totalMsgBits = double(msgLen) * 8;
+    msgBitsCount = msgLen * 8;
 
-    % ------------------ Datos del mensaje ---------------------
-    msgBits = uint8(bitget(pixels(33 : 32+totalMsgBits), 1));
+    if 64 + msgBitsCount > capacity
+        error("Corrupted header: msgLen too large.");
+    end
 
-    msgU8 = uint8(bits2bytes(msgBits));
+    % ===============================
+    % 3) RECREATE SAME RANDOM POSITIONS
+    % ===============================
+    rng(double(rngSeed));
 
-    % Convertir a texto
-    message = char(msgU8(:)).';
+    available = 65:capacity;
+    msgPos = available(randperm(numel(available), msgBitsCount));
+
+    % ===============================
+    % 4) READ MESSAGE FROM LSB
+    % ===============================
+    msgBits = uint8(bitget(pixels(msgPos), 1));
+    msgBytes = bits2bytes(msgBits);
+
+    message = char(msgBytes(:)).';
 end
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% ---- Helper: bits → bytes (LSB-first) ----------------------
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function u8 = bits2bytes(bits)
     nbits = numel(bits);
     if mod(nbits,8) ~= 0
-        error('El número de bits (%d) no es múltiplo de 8.', nbits);
+        error('bits2bytes: number of bits must be divisible by 8.');
     end
 
     nbytes = nbits/8;
@@ -39,13 +61,13 @@ function u8 = bits2bytes(bits)
     idx = 1;
 
     for k = 1:nbytes
-        val = uint8(0);
+        v = uint8(0);
         for bit = 0:7
             if bits(idx)
-                val = bitset(val, bit+1);
+                v = bitset(v, bit+1);
             end
             idx = idx + 1;
         end
-        u8(k) = val;
+        u8(k) = v;
     end
 end

@@ -1,6 +1,6 @@
 cover_path = '/Users/marcos/Desktop/HelloWorld/U/Proyecto-IC/ImgTest/guiza.png';
 %/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/guiza.png
-outdir = fullfile(pwd, 'results_XXX');
+outdir = fullfile(pwd, 'results_guiza');
 if ~exist(outdir, 'dir'), mkdir(outdir); end
 
 cover = imread(cover_path);

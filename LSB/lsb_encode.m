@@ -1,5 +1,6 @@
 function stego = lsb_encode(coverImg, message)
-    % Leer imagen
+
+    % --- Load image ---
     if ischar(coverImg) || isstring(coverImg)
         cover = imread(coverImg);
     else
@@ -8,38 +9,61 @@ function stego = lsb_encode(coverImg, message)
 
     cover = uint8(cover);
     pixels = cover(:);
+    capacity = numel(pixels);
 
-    % Convertir mensaje a bytes
+    % --- Convert message to bits ---
     msgBytes = uint8(message);
-    msgLen   = uint32(numel(msgBytes));
+    msgLen   = uint32(numel(msgBytes)); % bytes
 
-    % Convertir longitud a bits
-    lenBytes = typecast(msgLen, 'uint8');
-    bitsLen  = bytes2bits(lenBytes);
+    lenBytes = typecast(msgLen, 'uint8'); % 4 bytes
+    bitsLen  = bytes2bits(lenBytes);      % 32 bits
+    bitsMsg  = bytes2bits(msgBytes);      % msgLen*8 bits
 
-    % Convertir mensaje a bits
-    bitsMsg  = bytes2bits(msgBytes);
+    % --- RNG seed ---
+    rngSeed = uint32(randi([0 2^32-1]));
+    seedBytes = typecast(rngSeed, 'uint8');
+    bitsSeed  = bytes2bits(seedBytes);    % 32 bits
 
-    % Construir flujo de bits total
-    bitstream = [bitsLen; bitsMsg];
-    nbits = numel(bitstream);
+    headerBits = 32 + 32;                 % seed + length
+    msgBitsCount = numel(bitsMsg);
+    totalNeeded = headerBits + msgBitsCount;
 
-    % Chequeo de capacidad
-    if nbits > numel(pixels)
-        error("Mensaje demasiado grande para la imagen.");
+    if totalNeeded > capacity
+        error("Not enough capacity: need %d bits, have %d", totalNeeded, capacity);
     end
 
-    % ★ Secuencial: posiciones 1..nbits
-    pixels(1:nbits) = bitset(pixels(1:nbits), 1, bitstream);
+    % ===============================
+    % 1) FIXED HEADER POSITIONS (LSB)
+    % ===============================
+    seedPos = 1:32;
+    lenPos  = 33:64;
 
-    % Reconstruir imagen
+    % seed → LSB
+    for i = 1:32
+        pixels(seedPos(i)) = bitset(pixels(seedPos(i)), 1, bitsSeed(i));
+    end
+
+    % length → LSB
+    for i = 1:32
+        pixels(lenPos(i)) = bitset(pixels(lenPos(i)), 1, bitsLen(i));
+    end
+
+    % ===============================
+    % 2) DISTRIBUTE MESSAGE RANDOMLY
+    % ===============================
+    rng(double(rngSeed)); % must match decoder
+
+    available = 65:capacity;
+
+    msgPos = available(randperm(numel(available), msgBitsCount));
+
+    for i = 1:msgBitsCount
+        pixels(msgPos(i)) = bitset(pixels(msgPos(i)), 1, bitsMsg(i));
+    end
+
     stego = reshape(pixels, size(cover));
 end
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% ---- Helper: bytes → bits (LSB-first) ----------------------
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function bits = bytes2bits(u8)
     n = numel(u8);
     bits = zeros(n*8,1,'uint8');

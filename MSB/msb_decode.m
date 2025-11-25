@@ -1,6 +1,6 @@
 function message = msb_decode(stegoImg)
 
-    % --- load image ---
+    % Carga imagen
     if ischar(stegoImg) || isstring(stegoImg)
         stego = imread(stegoImg);
     else
@@ -8,15 +8,13 @@ function message = msb_decode(stegoImg)
     end
 
     if ~isa(stego, 'uint8')
-        error('Stego image must be uint8.');
+        error('La imagen debe ser uint8');
     end
 
     pixels = stego(:);
     capacity = numel(pixels);
 
-    % ===============================
-    % 1) FIXED POSITIONS → READ SEED
-    % ===============================
+    % Inicialización
     seedPos = 1:32;
     lenPos  = 33:64;
 
@@ -24,31 +22,23 @@ function message = msb_decode(stegoImg)
     seedBytes = bits2bytes(seedBits);
     rngSeed = typecast(uint8(seedBytes), 'uint32');
 
-    % ===============================
-    % 2) READ MESSAGE LENGTH
-    % ===============================
+    % Mensaje
     lenBits = uint8(bitget(pixels(lenPos), 8));
     lenBytes = bits2bytes(lenBits);
     msgLen = double(typecast(uint8(lenBytes), 'uint32'));
 
     msgBitsCount = msgLen * 8;
-
-    % sanity
     if 64 + msgBitsCount > capacity
-        error("Corrupted header: msgLen too large.");
+        error("Header erroneo");
     end
 
-    % ===============================
-    % 3) REBUILD SAME RANDOM POSITIONS
-    % ===============================
+    % Recalcular posiciones del encoder
     rng(double(rngSeed));
 
     available = 65:capacity;
     msgPos = available(randperm(numel(available), msgBitsCount));
 
-    % ===============================
-    % 4) READ MESSAGE BITS
-    % ===============================
+    % Descifrar el mensaje
     msgBits = uint8(bitget(pixels(msgPos), 8));
     msgBytes = bits2bytes(msgBits);
 
@@ -56,10 +46,11 @@ function message = msb_decode(stegoImg)
 
 end
 
+% Helper
 function u8 = bits2bytes(bits)
     nbits = numel(bits);
     if mod(nbits,8) ~= 0
-        error('bits2bytes: number of bits must be divisible by 8.');
+        error('Fallo en convertir bits a bytes. No es divisible entre 8');
     end
 
     nbytes = nbits/8;

@@ -1,6 +1,6 @@
 function stego = lsb_encode(coverImg, message)
-
-    % --- Load image ---
+    
+    % Carga imagen
     if ischar(coverImg) || isstring(coverImg)
         cover = imread(coverImg);
     else
@@ -11,47 +11,40 @@ function stego = lsb_encode(coverImg, message)
     pixels = cover(:);
     capacity = numel(pixels);
 
-    % --- Convert message to bits ---
+    % Mensaje a bits
     msgBytes = uint8(message);
-    msgLen   = uint32(numel(msgBytes)); % bytes
+    msgLen   = uint32(numel(msgBytes));
 
-    lenBytes = typecast(msgLen, 'uint8'); % 4 bytes
-    bitsLen  = bytes2bits(lenBytes);      % 32 bits
-    bitsMsg  = bytes2bits(msgBytes);      % msgLen*8 bits
+    lenBytes = typecast(msgLen, 'uint8');
+    bitsLen  = bytes2bits(lenBytes);
+    bitsMsg  = bytes2bits(msgBytes);
 
-    % --- RNG seed ---
     rngSeed = uint32(randi([0 2^32-1]));
     seedBytes = typecast(rngSeed, 'uint8');
-    bitsSeed  = bytes2bits(seedBytes);    % 32 bits
+    bitsSeed  = bytes2bits(seedBytes);
 
-    headerBits = 32 + 32;                 % seed + length
+    headerBits = 32 + 32;
     msgBitsCount = numel(bitsMsg);
     totalNeeded = headerBits + msgBitsCount;
 
     if totalNeeded > capacity
-        error("Not enough capacity: need %d bits, have %d", totalNeeded, capacity);
+        error("Capacidad faltante: %d bits son necesarios, hay %d", totalNeeded, capacity);
     end
 
-    % ===============================
-    % 1) FIXED HEADER POSITIONS (LSB)
-    % ===============================
+    % Header
     seedPos = 1:32;
     lenPos  = 33:64;
 
-    % seed → LSB
     for i = 1:32
         pixels(seedPos(i)) = bitset(pixels(seedPos(i)), 1, bitsSeed(i));
     end
 
-    % length → LSB
     for i = 1:32
         pixels(lenPos(i)) = bitset(pixels(lenPos(i)), 1, bitsLen(i));
     end
 
-    % ===============================
-    % 2) DISTRIBUTE MESSAGE RANDOMLY
-    % ===============================
-    rng(double(rngSeed)); % must match decoder
+    % Distribución uniforme
+    rng(double(rngSeed));
 
     available = 65:capacity;
 
@@ -64,6 +57,7 @@ function stego = lsb_encode(coverImg, message)
     stego = reshape(pixels, size(cover));
 end
 
+% Helper
 function bits = bytes2bits(u8)
     n = numel(u8);
     bits = zeros(n*8,1,'uint8');

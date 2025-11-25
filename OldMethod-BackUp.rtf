@@ -1,0 +1,490 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2867
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 LucidaGrande;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 LSB:\
+\
+Consid\'e9rese una imagen de dimensiones $m \\times n$ con $c$ canales ($c \\in \\\{1,3\\\}$). El n\'famero total de muestras de 8 bits es $N = m n c$. Se reserva una cabecera de $32$ bits para codificar la longitud del mensaje (en bytes), de modo que la capacidad efectiva resulta\
+\\[\
+C_\{\\text\{efectiva\}\} = N - 32 \\ \\text\{bits\},\
+\\]\
+lo que equivale a una longitud m\'e1xima de mensaje de $\\big\\lfloor (N-32)/8 \\big\\rfloor$ bytes.\\\\\
+\
+El procedimiento de inserci\'f3n mediante LSB se formaliza como sigue. En primer lugar, se adquiere la imagen de cubierta (desde una ruta o como matriz en memoria) y se verifica que su representaci\'f3n sea \\texttt\{uint8\}. En segundo t\'e9rmino, el mensaje se codifica en un vector de bytes y se obtiene su longitud como un entero de 32 bits (\\texttt\{uint32\}). A continuaci\'f3n, se construye una cabecera de 32 bits que codifica dicha longitud en orden LSB-primero por byte, en consonancia con las rutinas auxiliares, y se concatena con el flujo de bits del mensaje. Acto seguido, se comprueba que la capacidad del portador sea suficiente para albergar la cabecera y los datos. Posteriormente, los bits resultantes se escriben secuencialmente en el bit menos significativo de los p\'edxeles mediante \\texttt\{bitset\}. Por \'faltimo, la imagen esteganogr\'e1fica se reconstituye con \\texttt\{reshape\}. La complejidad temporal del algoritmo es lineal en el n\'famero de bits insertados, esto es, $\\mathcal\{O\}(N)$, y el consumo adicional de memoria es marginal, limitado al \\textit\{bitstream\} temporal.\\\\\
+\
+\\begin\{lstlisting\}[language=Matlab]\
+function stego = lsb_encode(coverImg, message)\
+% Leer imagen si se entreg\'f3 ruta\
+    if ischar(coverImg) || isstring(coverImg)\
+        cover = imread(coverImg);\
+    else\
+        cover = coverImg;\
+    end\
+\
+    if ~isa(cover,'uint8')\
+        error('La imagen debe ser uint8 (8 bits por canal).');\
+    end\
+\
+    % Convertir mensaje a bytes (UTF-8/ASCII)\
+    msgBytes = uint8(message);\
+    msgLen   = uint32(numel(msgBytes));      % longitud en bytes (32 bits)\
+\
+    % Empaquetar longitud (32 bits) y datos a un flujo de bits [0/1]\
+    lenBytes = typecast(msgLen,'uint8');     % 4 bytes (endianness local)\
+    bitsLen  = bytes2bits(lenBytes);\
+    bitsMsg  = bytes2bits(msgBytes);\
+    bitstream = [bitsLen; bitsMsg];          % columna de uint8\
+\
+    % Capacidad\
+    pixels = cover(:);\
+    capacity = numel(pixels);                % 1 bit por pixel\
+    nbits = numel(bitstream);\
+\
+    if nbits > capacity\
+        error('Capacidad insuficiente: se requieren %d bits y hay %d.', nbits, capacity);\
+    end\
+\
+    % Escribir LSBs\
+    pixels(1:nbits) = bitset(pixels(1:nbits), 1, bitstream);\
+\
+    % Reconstruir imagen\
+    stego = reshape(pixels, size(cover));\
+end\
+\
+% ------- Helpers --------\
+function bits = bytes2bits(u8)\
+% Convierte vector uint8 -> columna de bits (LSB primero por byte)\
+    n = numel(u8);\
+    bits = zeros(n*8,1,'uint8');\
+    idx = 1;\
+    for k = 1:n\
+        b = u8(k);\
+        for bit = 0:7\
+            bits(idx) = bitget(b, bit+1);  % LSB primero\
+            idx = idx + 1;\
+        end\
+    end\
+end\
+\\end\{lstlisting\}\
+\
+El procedimiento de extracci\'f3n invierte el algoritmo anterior. En primera instancia, se carga la imagen esteganogr\'e1fica y se linealizan sus p\'edxeles en un vector. Seguidamente, se recuperan los $32$ bits iniciales y se reagrupan en cuatro bytes para reconstruir la longitud del mensaje como un entero de 32 bits (\\texttt\{uint32\}). En tercer lugar, se calcula el n\'famero total de bits del mensaje, $B = 8\\,\\ell$ (donde $\\ell$ denota la longitud en bytes), y se verifica que el portador disponga de suficientes muestras para contenerlos. A continuaci\'f3n, se leen los siguientes $B$ bits desde los LSB de los p\'edxeles y se transforman en un vector de bytes. Finalmente, se reconstruye la cadena textual a partir de dichos bytes (por ejemplo, en \\textsc\{UTF-8\}).\\\\\
+\
+\\begin\{lstlisting\}[language=Matlab]\
+function message = lsb_decode(stegoImg)\
+    % Leer imagen si se entrego ruta\
+    if ischar(stegoImg) || isstring(stegoImg)\
+        stego = imread(stegoImg);\
+    else\
+        stego = stegoImg;\
+    end\
+\
+    if ~isa(stego,'uint8')\
+        error('La imagen debe ser uint8 (8 bits por canal).');\
+    end\
+\
+    pixels = stego(:);\
+\
+    % Recuperar longitud (primeros 32 bits)\
+    if numel(pixels) < 32\
+        error('Imagen demasiado peque\'f1a para contener cabecera.');\
+    end\
+    lenBits = uint8(bitget(pixels(1:32),1));\
+    lenBytes = bits2bytes(lenBits);\
+    msgLen = typecast(uint8(lenBytes),'uint32');  % bytes de mensaje\
+\
+    % Recuperar mensaje\
+    totalMsgBits = double(msgLen) * 8;\
+    startIdx = 32 + 1;\
+    endIdx   = 32 + totalMsgBits;\
+\
+    if endIdx > numel(pixels)\
+        error('La imagen no contiene suficientes bits para el mensaje indicado.');\
+    end\
+\
+    msgBits = uint8(bitget(pixels(startIdx:endIdx),1));\
+    msgU8   = uint8(bits2bytes(msgBits));\
+\
+    % Convertir a texto (interpreta como UTF-8/ASCII)\
+    message = char(msgU8(:)).';\
+end\
+\
+% ------- Helpers --------\
+function u8 = bits2bytes(bits)\
+% Convierte columna de bits (LSB primero por byte) -> vector uint8\
+    nbits = numel(bits);\
+    if mod(nbits,8) ~= 0\
+        error('El n\'famero de bits (%d) no es multiplo de 8.', nbits);\
+    end\
+    nbytes = nbits/8;\
+    u8 = zeros(1,nbytes,'uint8');\
+    idx = 1;\
+    for k = 1:nbytes\
+        val = uint8(0);\
+        for bit = 0:7\
+            if bits(idx) == 1\
+                val = bitset(val, bit+1);\
+            end\
+            idx = idx + 1;\
+        end\
+        u8(k) = val;\
+    end\
+end\
+\\end\{lstlisting\}\
+\
+\\begin\{lstlisting\}[language=Matlab]\
+function stego = lsb_encode(coverImg, message)\
+% Leer imagen si se entreg\'f3 ruta\
+    if ischar(coverImg) || isstring(coverImg)\
+        cover = imread(coverImg);\
+    else\
+        cover = coverImg;\
+    end\
+\
+    if ~isa(cover,'uint8')\
+        error('La imagen debe ser uint8 (8 bits por canal).');\
+    end\
+\
+    % Convertir mensaje a bytes (UTF-8/ASCII)\
+    msgBytes = uint8(message);\
+    msgLen   = uint32(numel(msgBytes));      % longitud en bytes (32 bits)\
+\
+    % Empaquetar longitud (32 bits) y datos a un flujo de bits [0/1]\
+    lenBytes = typecast(msgLen,'uint8');     % 4 bytes (endianness local)\
+    bitsLen  = bytes2bits(lenBytes);\
+    bitsMsg  = bytes2bits(msgBytes);\
+    bitstream = [bitsLen; bitsMsg];          % columna de uint8\
+\
+    % Capacidad\
+    pixels = cover(:);\
+    capacity = numel(pixels);                % 1 bit por pixel\
+    nbits = numel(bitstream);\
+\
+    if nbits > capacity\
+        error('Capacidad insuficiente: se requieren %d bits y hay %d.', nbits, capacity);\
+    end\
+\
+    % Escribir LSBs\
+    pixels(1:nbits) = bitset(pixels(1:nbits), 1, bitstream);\
+\
+    % Reconstruir imagen\
+    stego = reshape(pixels, size(cover));\
+end\
+\
+% ------- Helpers --------\
+function bits = bytes2bits(u8)\
+% Convierte vector uint8 -> columna de bits (LSB primero por byte)\
+    n = numel(u8);\
+    bits = zeros(n*8,1,'uint8');\
+    idx = 1;\
+    for k = 1:n\
+        b = u8(k);\
+        for bit = 0:7\
+            bits(idx) = bitget(b, bit+1);  % LSB primero\
+            idx = idx + 1;\
+        end\
+    end\
+end\
+\\end\{lstlisting\}\
+\
+\\begin\{lstlisting\}[language=Matlab]\
+function message = lsb_decode(stegoImg)\
+    % Leer imagen si se entrego ruta\
+    if ischar(stegoImg) || isstring(stegoImg)\
+        stego = imread(stegoImg);\
+    else\
+        stego = stegoImg;\
+    end\
+\
+    if ~isa(stego,'uint8')\
+        error('La imagen debe ser uint8 (8 bits por canal).');\
+    end\
+\
+    pixels = stego(:);\
+\
+    % Recuperar longitud (primeros 32 bits)\
+    if numel(pixels) < 32\
+        error('Imagen demasiado peque\'f1a para contener cabecera.');\
+    end\
+    lenBits = uint8(bitget(pixels(1:32),1));\
+    lenBytes = bits2bytes(lenBits);\
+    msgLen = typecast(uint8(lenBytes),'uint32');  % bytes de mensaje\
+\
+    % Recuperar mensaje\
+    totalMsgBits = double(msgLen) * 8;\
+    startIdx = 32 + 1;\
+    endIdx   = 32 + totalMsgBits;\
+\
+    if endIdx > numel(pixels)\
+        error('La imagen no contiene suficientes bits para el mensaje indicado.');\
+    end\
+\
+    msgBits = uint8(bitget(pixels(startIdx:endIdx),1));\
+    msgU8   = uint8(bits2bytes(msgBits));\
+\
+    % Convertir a texto (interpreta como UTF-8/ASCII)\
+    message = char(msgU8(:)).';\
+end\
+\
+% ------- Helpers --------\
+function u8 = bits2bytes(bits)\
+% Convierte columna de bits (LSB primero por byte) -> vector uint8\
+    nbits = numel(bits);\
+    if mod(nbits,8) ~= 0\
+        error('El n\'famero de bits (%d) no es multiplo de 8.', nbits);\
+    end\
+    nbytes = nbits/8;\
+    u8 = zeros(1,nbytes,'uint8');\
+    idx = 1;\
+    for k = 1:nbytes\
+        val = uint8(0);\
+        for bit = 0:7\
+            if bits(idx) == 1\
+                val = bitset(val, bit+1);\
+            end\
+            idx = idx + 1;\
+        end\
+        u8(k) = val;\
+    end\
+end\
+\\end\{lstlisting\}\
+\
+\
+\'97 \'97 \'97 \'97 \'97 \'97 \'97 \'97 \'97 \'97 \'97\
+\
+\
+MSB:\
+\
+\\subsection\{Most Significant Bit (MSB)\}\
+El m\'e9todo \\textit\{Most Significant Bit\} (MSB) consiste en ocultar informaci\'f3n forzando el bit m\'e1s significativo de cada p\'edxel (bit 8 en im\'e1genes \\texttt\{uint8\}). A diferencia de LSB, cada modificaci\'f3n sobre el MSB puede alterar la intensidad del p\'edxel hasta en $\\pm 128$ niveles, produciendo una distorsi\'f3n apreciable tal como se mostrar\'e1 en los resultados num\'e9ricos. En consecuencia, aunque la capacidad de inserci\'f3n es equivalente a LSB, la calidad visual se ve significativamente degradada.\
+\
+\\paragraph\{Capacidad y cabecera.\}\
+Sea una imagen de dimensiones $m\\times n$ con $c$ canales ($c\\in\\\{1,3\\\}$). El n\'famero total de muestras es $N=mnc$. De forma an\'e1loga a LSB, se reservan los primeros $32$ bits para codificar la longitud del mensaje (en bytes), quedando\
+\\[\
+C_\{\\text\{efectiva\}\} = N - 32 \\ \\text\{bits\}, \
+\\qquad \
+|M|_\{\\max\} = \\Big\\lfloor \\frac\{N-32\}\{8\} \\Big\\rfloor \\ \\text\{bytes\}.\
+\\]\
+La cabecera se construye como \\texttt\{uint32\} y se transforma a 4 bytes mediante \\texttt\{typecast\}; posteriormente, cada byte se expande a bits en orden \\emph\{LSB-primero por byte\}, en coherencia con las funciones auxiliares. Respecto al \\emph\{endianness\}, la codificaci\'f3n y la decodificaci\'f3n con el mismo c\'f3digo garantizan consistencia; para intercambio entre plataformas heterog\'e9neas es recomendable fijar expl\'edcitamente \\emph\{little-endian\}.\
+\
+\\paragraph\{Impacto en la calidad.\}\
+En MSB, la operaci\'f3n \\texttt\{bitset(.,8,.)\} impone el valor del bit 8 seg\'fan el flujo de inserci\'f3n, generando saltos de intensidad sustanciales. Ello repercute en una reducci\'f3n notable de la PSNR y un incremento del error (Frobenius, MSE). Este enfoque ilustra de manera directa c\'f3mo la posici\'f3n del bit determina la imperceptibilidad de la esteganograf\'eda.\
+\
+\\begin\{lstlisting\}[language=Matlab]\
+function stego = msb_encode(coverImg, message)\
+    % Leer imagen\
+    if ischar(coverImg) || isstring(coverImg)\
+        cover = imread(coverImg);\
+    else\
+        cover = coverImg;\
+    end\
+\
+    if ~isa(cover, 'uint8')\
+        error('La imagen debe ser uint8 (8 bits por canal).');\
+    end\
+\
+    % Convertir mensaje a bytes y bits\
+    msgBytes = uint8(message);\
+    msgLen   = uint32(numel(msgBytes));  % longitud en bytes (32 bits)\
+\
+    lenBytes = typecast(msgLen, 'uint8');\
+    bitsLen  = bytes2bits(lenBytes);\
+    bitsMsg  = bytes2bits(msgBytes);\
+    bitstream = [bitsLen; bitsMsg];      % concatenamos cabecera + datos\
+\
+    % Aplanar imagen\
+    pixels = cover(:);\
+    capacity = numel(pixels);\
+    nbits = numel(bitstream);\
+\
+    if nbits > capacity\
+        error('Capacidad insuficiente: %d bits requeridos, %d disponibles.', nbits, capacity);\
+    end\
+\
+    % Escribir en el bit m\'e1s significativo\
+    pixels(1:nbits) = bitset(pixels(1:nbits), 8, bitstream);\
+\
+    % Reconstruir imagen\
+    stego = reshape(pixels, size(cover));\
+end\
+\
+function bits = bytes2bits(u8)\
+    n = numel(u8);\
+    bits = zeros(n*8,1,'uint8');\
+    idx = 1;\
+    for k = 1:n\
+        b = u8(k);\
+        for bit = 0:7\
+            bits(idx) = bitget(b, bit+1); % LSB\uc0\u8594 MSB\
+            idx = idx + 1;\
+        end\
+    end\
+end\
+\\end\{lstlisting\}\
+\
+\\noindent\
+\\textbf\{Extracci\'f3n.\} El proceso de decodificaci\'f3n invierte los pasos anteriores: primero se leen los $32$ bits iniciales desde el \\emph\{MSB\} de los p\'edxeles para reconstruir la longitud del mensaje (\\texttt\{uint32\}); a continuaci\'f3n, se consumen $8\\cdot |M|$ bits para recuperar los bytes del mensaje. Las consideraciones sobre \\emph\{endianness\} y codificaci\'f3n de caracteres son an\'e1logas a las del caso LSB (para acentos y emoji se recomienda \\texttt\{unicode2native\}/\\texttt\{native2unicode\}).\
+\
+\\begin\{lstlisting\}[language=Matlab]\
+function message = msb_decode(stegoImg)\
+    if ischar(stegoImg) || isstring(stegoImg)\
+        stego = imread(stegoImg);\
+    else\
+        stego = stegoImg;\
+    end\
+\
+    if ~isa(stego, 'uint8')\
+        error('La imagen debe ser uint8 (8 bits por canal).');\
+    end\
+\
+    pixels = stego(:);\
+\
+    % Leer longitud (primeros 32 bits)\
+    lenBits = uint8(bitget(pixels(1:32), 8));\
+    lenBytes = bits2bytes(lenBits);\
+    msgLen = typecast(uint8(lenBytes), 'uint32');\
+\
+    % Leer mensaje\
+    totalMsgBits = double(msgLen)*8;\
+    startIdx = 33;\
+    endIdx = 32 + totalMsgBits;\
+\
+    if endIdx > numel(pixels)\
+        error('La imagen no contiene suficientes bits.');\
+    end\
+\
+    msgBits = uint8(bitget(pixels(startIdx:endIdx), 8));\
+    msgU8   = uint8(bits2bytes(msgBits));\
+    message = char(msgU8(:)).';\
+end\
+\
+function u8 = bits2bytes(bits)\
+    nbits = numel(bits);\
+    if mod(nbits,8) ~= 0\
+        error('N\'famero de bits no m\'faltiplo de 8.');\
+    end\
+    nbytes = nbits/8;\
+    u8 = zeros(1,nbytes,'uint8');\
+    idx = 1;\
+    for k = 1:nbytes\
+        val = uint8(0);\
+        for bit = 0:7\
+            if bits(idx)\
+                val = bitset(val, bit+1);\
+            end\
+            idx = idx + 1;\
+        end\
+        u8(k) = val;\
+    end\
+end\
+\\end\{lstlisting\}\
+\
+\\begin\{lstlisting\}[language=Matlab]\
+function stego = msb_encode(coverImg, message)\
+    % Leer imagen\
+    if ischar(coverImg) || isstring(coverImg)\
+        cover = imread(coverImg);\
+    else\
+        cover = coverImg;\
+    end\
+\
+    if ~isa(cover, 'uint8')\
+        error('La imagen debe ser uint8 (8 bits por canal).');\
+    end\
+\
+    % Convertir mensaje a bytes y bits\
+    msgBytes = uint8(message);\
+    msgLen   = uint32(numel(msgBytes));  % longitud en bytes (32 bits)\
+\
+    lenBytes = typecast(msgLen, 'uint8');\
+    bitsLen  = bytes2bits(lenBytes);\
+    bitsMsg  = bytes2bits(msgBytes);\
+    bitstream = [bitsLen; bitsMsg];      % concatenamos cabecera + datos\
+\
+    % Aplanar imagen\
+    pixels = cover(:);\
+    capacity = numel(pixels);\
+    nbits = numel(bitstream);\
+\
+    if nbits > capacity\
+        error('Capacidad insuficiente: %d bits requeridos, %d disponibles.', nbits, capacity);\
+    end\
+\
+    % Escribir en el bit m\'e1s significativo\
+    pixels(1:nbits) = bitset(pixels(1:nbits), 8, bitstream);\
+\
+    % Reconstruir imagen\
+    stego = reshape(pixels, size(cover));\
+end\
+\
+function bits = bytes2bits(u8)\
+    n = numel(u8);\
+    bits = zeros(n*8,1,'uint8');\
+    idx = 1;\
+    for k = 1:n\
+        b = u8(k);\
+        for bit = 0:7\
+            bits(idx) = bitget(b, bit+1); % LSB
+\f1 \uc0\u8594 
+\f0 MSB\
+            idx = idx + 1;\
+        end\
+    end\
+end\
+\\end\{lstlisting\}\
+\
+\\begin\{lstlisting\}[language=Matlab]\
+function message = msb_decode(stegoImg)\
+    if ischar(stegoImg) || isstring(stegoImg)\
+        stego = imread(stegoImg);\
+    else\
+        stego = stegoImg;\
+    end\
+\
+    if ~isa(stego, 'uint8')\
+        error('La imagen debe ser uint8 (8 bits por canal).');\
+    end\
+\
+    pixels = stego(:);\
+\
+    % Leer longitud (primeros 32 bits)\
+    lenBits = uint8(bitget(pixels(1:32), 8));\
+    lenBytes = bits2bytes(lenBits);\
+    msgLen = typecast(uint8(lenBytes), 'uint32');\
+\
+    % Leer mensaje\
+    totalMsgBits = double(msgLen)*8;\
+    startIdx = 33;\
+    endIdx = 32 + totalMsgBits;\
+\
+    if endIdx > numel(pixels)\
+        error('La imagen no contiene suficientes bits.');\
+    end\
+\
+    msgBits = uint8(bitget(pixels(startIdx:endIdx), 8));\
+    msgU8   = uint8(bits2bytes(msgBits));\
+    message = char(msgU8(:)).';\
+end\
+\
+function u8 = bits2bytes(bits)\
+    nbits = numel(bits);\
+    if mod(nbits,8) ~= 0\
+        error('N\'famero de bits no m\'faltiplo de 8.');\
+    end\
+    nbytes = nbits/8;\
+    u8 = zeros(1,nbytes,'uint8');\
+    idx = 1;\
+    for k = 1:nbytes\
+        val = uint8(0);\
+        for bit = 0:7\
+            if bits(idx)\
+                val = bitset(val, bit+1);\
+            end\
+            idx = idx + 1;\
+        end\
+        u8(k) = val;\
+    end\
+end\
+\\end\{lstlisting\}}

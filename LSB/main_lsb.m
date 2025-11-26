@@ -1,12 +1,12 @@
-cover_path = '/home/yessica-trujillo/Documentos/Proyecto_IC/Proyecto-IC---Framework-para-cifrado-y-ocultamiento-en-imagenes/ImgTest/guiza.png';
+cover_path = '/home/yessica-trujillo/Documentos/Proyecto_IC/Proyecto-IC---Framework-para-cifrado-y-ocultamiento-en-imagenes/ImgTest/chess.png';
 %/home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/guiza.png
-outdir = fullfile(pwd, 'results_guiza');
+outdir = fullfile(pwd, 'results_chess');
 if ~exist(outdir, 'dir'), mkdir(outdir); end
 
 cover = imread(cover_path);
 
 %% Mensaje comun para todas las pruebas
-MSG = 'LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDAT NON PROIDENT, SUNT EN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDAT NON PROIDENT, SUNT EN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM... (etc)';
+MSG = 'LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDAT NON PROIDENT, SUNT EN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDAT NON PROIDENT, SUNT EN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDAT NON PROIDENT, SUNT EN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT. DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDAT NON PROIDENT, SUNT EN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM. LOREM IPSUM... (etc)';
 
 %% Caso A: LSB sin cifrado
 msg_A = MSG;
@@ -19,6 +19,7 @@ rec_A = lsb_decode(file_A);
 fprintf('Recuperado (LSB sin cifrado): %s\n', rec_A);
 
 [E_F_A, E_rel_A] = frobenius_error(cover, stego_A);
+[ECM_A, PSNR_A]  = ecm_psnr(cover, stego_A);
 
 %% Caso B: LSB + Cesar
 k = 3;
@@ -34,6 +35,7 @@ rec_B     = cesar_dec(rec_B_cif, k);
 fprintf('Recuperado (LSB + Cesar k=%d): %s\n', k, rec_B);
 
 [E_F_B, E_rel_B] = frobenius_error(cover, stego_B);
+[ECM_B, PSNR_B]  = ecm_psnr(cover, stego_B);
 
 %% Caso C: LSB + ElGamal (mod 257)
 p = 257;
@@ -50,6 +52,7 @@ rec_C     = elgamal_dec(rec_C_cif, K, p, true);
 fprintf('Recuperado (LSB + ElGamal p=%d, K=%d): %s\n', p, K, rec_C);
 
 [E_F_C, E_rel_C] = frobenius_error(cover, stego_C);
+[ECM_C, PSNR_C]  = ecm_psnr(cover, stego_C);
 
 %% Caso D: LSB + Sustitucion monoalfabetica
 msg_D_plain = MSG;
@@ -64,6 +67,7 @@ rec_D     = sust_dec(rec_D_cif);
 fprintf('Recuperado (LSB + Sustitucion): %s\n', rec_D);
 
 [E_F_D, E_rel_D] = frobenius_error(cover, stego_D);
+[ECM_D, PSNR_D]  = ecm_psnr(cover, stego_D);
 
 %% Caso E: LSB + Vigenere
 keyV = 'CLAVE';
@@ -79,6 +83,7 @@ rec_E     = vig_dec(rec_E_cif, keyV);
 fprintf('Recuperado (LSB + Vigenere key=%s): %s\n', keyV, rec_E);
 
 [E_F_E, E_rel_E] = frobenius_error(cover, stego_E);
+[ECM_E, PSNR_E]  = ecm_psnr(cover, stego_E);
 
 %% Caso F: LSB + RSA
 e = 17;
@@ -92,7 +97,7 @@ msg_F_cif   = RSA_enc(msg_F_plain, e, n);
 msg_F_bytes = typecast(uint16(msg_F_cif), 'uint8');
 
 stego_F = lsb_encode(cover, msg_F_bytes);
-file_F  = fullfile(outdir, 'stego_lsb_rsa.png');   % ← nombre coherente con LSB
+file_F  = fullfile(outdir, 'stego_lsb_rsa.png');   % nombre coherente con LSB
 imwrite(stego_F, file_F, 'png');
 
 rec_F_bytes = lsb_decode(file_F);
@@ -103,12 +108,13 @@ rec_F_int = uint64(rec_F_u16);
 
 rec_F = RSA_dec(rec_F_int, d, n);
 
-fprintf('Recuperado (LSB + RSA): %s\n', rec_F);    % ← texto corregido
+fprintf('Recuperado (LSB + RSA): %s\n', rec_F);
 
-% Error de Frobenius para el caso F
+% Métricas para el caso F
 [E_F_F, E_rel_F] = frobenius_error(cover, stego_F);
+[ECM_F, PSNR_F]  = ecm_psnr(cover, stego_F);
 
-%% Tabla de errores (Frobenius absoluto y relativo)
+%% Tabla de métricas
 Metodo = [ ...
     "LSB sin cifrado"; ...
     "LSB + Cesar (k=" + k + ")"; ...
@@ -118,7 +124,10 @@ Metodo = [ ...
     "LSB + RSA" ...
 ];
 
-Error_F   = [E_F_A; E_F_B; E_F_C; E_F_D; E_F_E; E_F_F];
-Error_rel = [E_rel_A; E_rel_B; E_rel_C; E_rel_D; E_rel_E; E_rel_F];
+Error_F   = [E_F_A;  E_F_B;  E_F_C;  E_F_D;  E_F_E;  E_F_F];
+Error_rel = [E_rel_A;E_rel_B;E_rel_C;E_rel_D;E_rel_E;E_rel_F];
+ECM_vec   = [ECM_A;  ECM_B;  ECM_C;  ECM_D;  ECM_E;  ECM_F];
+PSNR_vec  = [PSNR_A; PSNR_B; PSNR_C; PSNR_D; PSNR_E; PSNR_F];
 
-T = table(Metodo, Error_F, Error_rel);
+T = table(Metodo, Error_F, Error_rel, ECM_vec, PSNR_vec, ...
+          'VariableNames', {'Metodo','Error_F','Error_rel','ECM','PSNR'});

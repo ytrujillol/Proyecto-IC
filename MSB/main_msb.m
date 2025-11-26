@@ -1,6 +1,6 @@
-cover_path = '/home/yessica-trujillo/Documentos/Proyecto_IC/Proyecto-IC---Framework-para-cifrado-y-ocultamiento-en-imagenes/ImgTest/guiza.png';
+cover_path = '/home/yessica-trujillo/Documentos/Proyecto_IC/Proyecto-IC---Framework-para-cifrado-y-ocultamiento-en-imagenes/ImgTest/chess.png';
 % /home/yessica-trujillo/Documentos/Procesamiento-de-imagenes/Images/guiza.png
-outdir = fullfile(pwd, 'results_guiza');
+outdir = fullfile(pwd, 'results_chess');
 if ~exist(outdir, 'dir'), mkdir(outdir); end
 
 cover = imread(cover_path);
@@ -19,7 +19,7 @@ rec_A = msb_decode(file_A);
 fprintf('Recuperado (MSB sin cifrado): %s\n', rec_A);
 
 [E_F_A, E_rel_A] = frobenius_error(cover, stego_A);
-
+[ECM_A, PSNR_A]  = ecm_psnr(cover, stego_A);
 
 %% Caso B: MSB + Cesar
 k = 3;
@@ -35,7 +35,7 @@ rec_B     = cesar_dec(rec_B_cif, k);
 fprintf('Recuperado (MSB + Cesar k=%d): %s\n', k, rec_B);
 
 [E_F_B, E_rel_B] = frobenius_error(cover, stego_B);
-
+[ECM_B, PSNR_B]  = ecm_psnr(cover, stego_B);
 
 %% Caso C: MSB + ElGamal (mod 257)
 p = 257;
@@ -52,7 +52,7 @@ rec_C     = elgamal_dec(rec_C_cif, K, p, true);
 fprintf('Recuperado (MSB + ElGamal p=%d, K=%d): %s\n', p, K, rec_C);
 
 [E_F_C, E_rel_C] = frobenius_error(cover, stego_C);
-
+[ECM_C, PSNR_C]  = ecm_psnr(cover, stego_C);
 
 %% Caso D: MSB + Sustitucion monoalfabetica
 msg_D_plain = MSG;
@@ -67,7 +67,7 @@ rec_D     = sust_dec(rec_D_cif);
 fprintf('Recuperado (MSB + Sustitucion): %s\n', rec_D);
 
 [E_F_D, E_rel_D] = frobenius_error(cover, stego_D);
-
+[ECM_D, PSNR_D]  = ecm_psnr(cover, stego_D);
 
 %% Caso E: MSB + Vigenere
 keyV = 'CLAVE';
@@ -83,7 +83,7 @@ rec_E     = vig_dec(rec_E_cif, keyV);
 fprintf('Recuperado (MSB + Vigenere key=%s): %s\n', keyV, rec_E);
 
 [E_F_E, E_rel_E] = frobenius_error(cover, stego_E);
-
+[ECM_E, PSNR_E]  = ecm_psnr(cover, stego_E);
 
 %% Caso F: MSB + RSA
 e = 17;
@@ -110,11 +110,11 @@ rec_F = RSA_dec(rec_F_int, d, n);
 
 fprintf('Recuperado (MSB + RSA): %s\n', rec_F);
 
-% Cálculo del error de Frobenius para el caso F
+% Métricas para el caso F
 [E_F_F, E_rel_F] = frobenius_error(cover, stego_F);
+[ECM_F, PSNR_F]  = ecm_psnr(cover, stego_F);
 
-
-%% Tabla de errores
+%% Tabla de métricas
 Metodo = [ ...
     "MSB sin cifrado"; ...
     "MSB + Cesar (k=" + k + ")"; ...
@@ -124,7 +124,10 @@ Metodo = [ ...
     "MSB + RSA" ...
 ];
 
-Error_F   = [E_F_A; E_F_B; E_F_C; E_F_D; E_F_E; E_F_F];
-Error_rel = [E_rel_A; E_rel_B; E_rel_C; E_rel_D; E_rel_E; E_rel_F];
+Error_F   = [E_F_A;  E_F_B;  E_F_C;  E_F_D;  E_F_E;  E_F_F];
+Error_rel = [E_rel_A;E_rel_B;E_rel_C;E_rel_D;E_rel_E;E_rel_F];
+ECM_vec   = [ECM_A;  ECM_B;  ECM_C;  ECM_D;  ECM_E;  ECM_F];
+PSNR_vec  = [PSNR_A; PSNR_B; PSNR_C; PSNR_D; PSNR_E; PSNR_F];
 
-T = table(Metodo, Error_F, Error_rel);
+T = table(Metodo, Error_F, Error_rel, ECM_vec, PSNR_vec, ...
+          'VariableNames', {'Metodo','Error_F','Error_rel','ECM','PSNR'});

@@ -1,13 +1,14 @@
-function cipher = RSA_enc(plain, e, n)
-    plain = uint64(plain(:));   
-    
-    cipher = zeros(size(plain), 'uint64');
+function out = rsa_dec(cipher, d, n)
+    cipher = uint64(cipher(:));
+    m      = zeros(size(cipher), 'uint64');
 
-    % Para cada carácter: c = m^e mod n
-    for i = 1:numel(plain)
-        m = plain(i);
-        cipher(i) = powermod(m, e, n);
+    % Para cada bloque: m = c^d mod n
+    for i = 1:numel(cipher)
+        c = cipher(i);
+        m(i) = powermod(c, d, n);
     end
+
+    out = char(m.');
 end
 
 % Exponenciación rápida

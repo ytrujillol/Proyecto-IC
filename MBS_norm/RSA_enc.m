@@ -1,4 +1,4 @@
-function cipher = RSA_enc(plain, e, n)
+function cipher = rsa_enc(plain, e, n)
     plain = uint64(plain(:));   
     
     cipher = zeros(size(plain), 'uint64');

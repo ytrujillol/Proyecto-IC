@@ -1,8 +1,8 @@
 clc; clear; close all;
 
 % Rutas de las imágenes
-ruta_orig  = '/home/yessica-trujillo/Documentos/Proyecto_IC/Proyecto-IC---Framework-para-cifrado-y-ocultamiento-en-imagenes/ImgTest/guiza.png';
-ruta_stego = '/home/yessica-trujillo/Documentos/Proyecto_IC/Proyecto-IC---Framework-para-cifrado-y-ocultamiento-en-imagenes/MBS_norm/results_guiza/stego_msb_vigenere_key_CLAVE.png';
+ruta_orig  = '/home/yessica-trujillo/Documentos/Proyecto_IC/Proyecto-IC---Framework-para-cifrado-y-ocultamiento-en-imagenes/ImgTest/chess.png';
+ruta_stego = '/home/yessica-trujillo/Documentos/Proyecto_IC/Proyecto-IC---Framework-para-cifrado-y-ocultamiento-en-imagenes/MSB/results_chess/stego_msb_sustitucion.png';
 
 % Leer imágenes
 img_orig  = imread(ruta_orig);
@@ -72,6 +72,6 @@ plot(bins, hB2, 'b', 'LineWidth', 1.2);
 xlim([0 255]);
 xlabel('Nivel de intensidad');
 ylabel('Frecuencia');
-title('Imagen LSB + RSA');
+title('Imagen MSB + Sustitución');
 legend('R', 'G', 'B', 'Location','northeast');
 hold off;
